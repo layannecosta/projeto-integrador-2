@@ -23,21 +23,21 @@ export default function HeaderAdmin() {
                 </li>
 
                 {/* Botão de logout */}
-                 <li>
+                <li>
                     <button
                         onClick={() => navigate("/#")}
                         className="hover:text-gray-200 transition-colors duration-200">
-                            Sair
-                        </button>
+                        Sair
+                    </button>
                 </li>
 
                 {/* Botão de criar anúncio */}
                 <li>
                     <button
-                        onClick={() => navigate("/#")}
+                        onClick={() => navigate("/form-products")}
                         className="bg-white text-secundary px-8 py-2 rounded-md hover:bg-primary/90 transition-colors duration-200">
-                            Anunciar
-                        </button>
+                        Anunciar
+                    </button>
                 </li>
             </ul>
         </div>

@@ -20,6 +20,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Login from "./pages/login";
 import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
+import UserProducts from "./pages/user-products";
+import FormProducts from "./pages/form-product";
 
 /**
  * Componente principal da aplicação
@@ -97,6 +99,24 @@ export default function App() {
       element: (
         <AdminTemplate>
           <Dashboard />
+        </AdminTemplate>
+      ),
+    },
+      {
+      // Rota exibição de produtos
+      path: "/my-products",
+      element: (
+        <AdminTemplate>
+          <UserProducts />
+        </AdminTemplate>
+      ),
+    },
+        {
+      // Rota cadastro de produtos
+      path: "/form-products",
+      element: (
+        <AdminTemplate>
+          <FormProducts />
         </AdminTemplate>
       ),
     },

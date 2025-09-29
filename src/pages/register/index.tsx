@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
 type RegisterForm = {
     nome: string;
@@ -9,17 +11,59 @@ type RegisterForm = {
     senha: string;
 }
 
-export default function Register() {
-    const [formData, setFormData] = useState<RegisterForm>({
-        nome: "",
-        email: "",
-        telefone: "",
-        cidade: "",
-        estado: "",
-        senha: ""
-    });
+// Schema de validação com Yup
+const schema = yup.object().shape({
+    nome: yup
+        .string()
+        .required("O nome é obrigatório")
+        .min(2, "O nome deve ter pelo menos 2 caracteres")
+        .max(100, "O nome deve ter no máximo 100 caracteres")
+        .matches(/^[a-zA-ZÀ-ÿ\s]+$/, "O nome deve conter apenas letras"),
 
-    const [errors, setErrors] = useState<Partial<RegisterForm>>({});
+    email: yup
+        .string()
+        .required("O email é obrigatório")
+        .email("Digite um email válido")
+        .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Digite um email válido"),
+
+    telefone: yup
+        .string()
+        .required("O telefone é obrigatório")
+        .matches(/^\(\d{2}\)\s\d{4,5}-\d{4}$/, "Digite um telefone válido (xx) xxxxx-xxxx"),
+
+    cidade: yup
+        .string()
+        .required("A cidade é obrigatória")
+        .min(2, "A cidade deve ter pelo menos 2 caracteres")
+        .max(100, "A cidade deve ter no máximo 100 caracteres"),
+
+    estado: yup
+        .string()
+        .required("O estado é obrigatório")
+        .oneOf(
+            ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"],
+            "Selecione um estado válido"
+        ),
+
+    senha: yup
+        .string()
+        .required("A senha é obrigatória")
+        .min(6, "A senha deve ter pelo menos 6 caracteres")
+        .max(50, "A senha deve ter no máximo 50 caracteres")
+});
+
+export default function Register() {
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        reset,
+        setValue,
+        watch
+    } = useForm<RegisterForm>({
+        resolver: yupResolver(schema) as any,
+        mode: "onBlur"
+    });
 
     // Lista de estados brasileiros
     const estados = [
@@ -27,54 +71,6 @@ export default function Register() {
         "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
         "RS", "RO", "RR", "SC", "SP", "SE", "TO"
     ];
-
-    // Função de validação
-    const validateForm = (): boolean => {
-        const newErrors: Partial<RegisterForm> = {};
-
-        // Validação do nome
-        if (!formData.nome.trim()) {
-            newErrors.nome = "O nome é obrigatório";
-        } else if (formData.nome.trim().length < 2) {
-            newErrors.nome = "O nome deve ter pelo menos 2 caracteres";
-        }
-
-        // Validação do email
-        if (!formData.email) {
-            newErrors.email = "O email é obrigatório";
-        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-            newErrors.email = "Digite um email válido";
-        }
-
-        // Validação do telefone
-        if (!formData.telefone.trim()) {
-            newErrors.telefone = "O telefone é obrigatório";
-        } else if (!/^\(\d{2}\)\s\d{4,5}-\d{4}$/.test(formData.telefone)) {
-            newErrors.telefone = "Digite um telefone válido (xx) xxxxx-xxxx";
-        }
-
-        // Validação da cidade
-        if (!formData.cidade.trim()) {
-            newErrors.cidade = "A cidade é obrigatória";
-        } else if (formData.cidade.trim().length < 2) {
-            newErrors.cidade = "A cidade deve ter pelo menos 2 caracteres";
-        }
-
-        // Validação do estado
-        if (!formData.estado) {
-            newErrors.estado = "O estado é obrigatório";
-        }
-
-        // Validação da senha
-        if (!formData.senha) {
-            newErrors.senha = "A senha é obrigatória";
-        } else if (formData.senha.length < 6) {
-            newErrors.senha = "A senha deve ter pelo menos 6 caracteres";
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
 
     // Função para formatar telefone automaticamente
     const formatTelefone = (value: string): string => {
@@ -91,49 +87,17 @@ export default function Register() {
         }
     };
 
-    // Função para lidar com mudanças nos inputs
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-
-        let formattedValue = value;
-
-        // Formatação especial para telefone
-        if (name === "telefone") {
-            formattedValue = formatTelefone(value);
-        }
-
-        setFormData(prev => ({
-            ...prev,
-            [name]: formattedValue
-        }));
-
-        // Limpar erro do campo quando o usuário começar a digitar
-        if (errors[name as keyof RegisterForm]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: undefined
-            }));
-        }
+    // Handler para formatar telefone em tempo real
+    const handleTelefoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formatted = formatTelefone(e.target.value);
+        setValue("telefone", formatted, { shouldValidate: true });
     };
 
     // Função de submit
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (validateForm()) {
-            console.log("Dados do cadastro:", formData);
-            alert("Cadastro realizado com sucesso!");
-
-            // Resetar formulário após sucesso
-            setFormData({
-                nome: "",
-                email: "",
-                telefone: "",
-                cidade: "",
-                estado: "",
-                senha: ""
-            });
-        }
+    const onSubmit = (data: RegisterForm) => {
+        console.log("Dados do cadastro:", data);
+        alert("Cadastro realizado com sucesso!");
+        reset();
     };
 
     return (
@@ -154,22 +118,21 @@ export default function Register() {
 
                     {/* Formulário */}
                     <div className="px-8 py-8">
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                             {/* Grid para campos em linha */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Campo Nome */}
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-gray-700 font-medium">Nome Completo *</label>
                                     <input
-                                        name="nome"
+                                        {...register("nome")}
                                         type="text"
-                                        value={formData.nome}
-                                        onChange={handleInputChange}
-                                        className="w-full border-2 border-gray-200 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-all duration-200"
+                                        className={`w-full border-2 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:outline-none transition-all duration-200 ${errors.nome ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-primary"
+                                            }`}
                                         placeholder="Digite seu nome completo"
                                     />
                                     {errors.nome && (
-                                        <span className="text-red-600 text-sm">{errors.nome}</span>
+                                        <span className="text-red-600 text-sm">{errors.nome.message}</span>
                                     )}
                                 </div>
 
@@ -177,15 +140,14 @@ export default function Register() {
                                 <div className="space-y-2">
                                     <label className="text-gray-700 font-medium">E-mail *</label>
                                     <input
-                                        name="email"
+                                        {...register("email")}
                                         type="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        className="w-full border-2 border-gray-200 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-all duration-200"
+                                        className={`w-full border-2 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:outline-none transition-all duration-200 ${errors.email ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-primary"
+                                            }`}
                                         placeholder="Digite seu e-mail"
                                     />
                                     {errors.email && (
-                                        <span className="text-red-600 text-sm">{errors.email}</span>
+                                        <span className="text-red-600 text-sm">{errors.email.message}</span>
                                     )}
                                 </div>
 
@@ -193,16 +155,16 @@ export default function Register() {
                                 <div className="space-y-2">
                                     <label className="text-gray-700 font-medium">Telefone *</label>
                                     <input
-                                        name="telefone"
+                                        {...register("telefone")}
                                         type="tel"
-                                        value={formData.telefone}
-                                        onChange={handleInputChange}
+                                        onChange={handleTelefoneChange}
                                         maxLength={15}
-                                        className="w-full border-2 border-gray-200 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-all duration-200"
+                                        className={`w-full border-2 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:outline-none transition-all duration-200 ${errors.telefone ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-primary"
+                                            }`}
                                         placeholder="(11) 99999-9999"
                                     />
                                     {errors.telefone && (
-                                        <span className="text-red-600 text-sm">{errors.telefone}</span>
+                                        <span className="text-red-600 text-sm">{errors.telefone.message}</span>
                                     )}
                                 </div>
 
@@ -210,15 +172,14 @@ export default function Register() {
                                 <div className="space-y-2">
                                     <label className="text-gray-700 font-medium">Cidade *</label>
                                     <input
-                                        name="cidade"
+                                        {...register("cidade")}
                                         type="text"
-                                        value={formData.cidade}
-                                        onChange={handleInputChange}
-                                        className="w-full border-2 border-gray-200 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-all duration-200"
+                                        className={`w-full border-2 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:outline-none transition-all duration-200 ${errors.cidade ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-primary"
+                                            }`}
                                         placeholder="Digite sua cidade"
                                     />
                                     {errors.cidade && (
-                                        <span className="text-red-600 text-sm">{errors.cidade}</span>
+                                        <span className="text-red-600 text-sm">{errors.cidade.message}</span>
                                     )}
                                 </div>
 
@@ -226,10 +187,9 @@ export default function Register() {
                                 <div className="space-y-2">
                                     <label className="text-gray-700 font-medium">Estado *</label>
                                     <select
-                                        name="estado"
-                                        value={formData.estado}
-                                        onChange={handleInputChange}
-                                        className="w-full border-2 border-gray-200 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-all duration-200"
+                                        {...register("estado")}
+                                        className={`w-full border-2 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:outline-none transition-all duration-200 ${errors.estado ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-primary"
+                                            }`}
                                     >
                                         <option value="">Selecione o estado</option>
                                         {estados.map((estado) => (
@@ -239,7 +199,7 @@ export default function Register() {
                                         ))}
                                     </select>
                                     {errors.estado && (
-                                        <span className="text-red-600 text-sm">{errors.estado}</span>
+                                        <span className="text-red-600 text-sm">{errors.estado.message}</span>
                                     )}
                                 </div>
 
@@ -247,15 +207,14 @@ export default function Register() {
                                 <div className="space-y-2 md:col-span-2">
                                     <label className="text-gray-700 font-medium">Senha *</label>
                                     <input
-                                        name="senha"
+                                        {...register("senha")}
                                         type="password"
-                                        value={formData.senha}
-                                        onChange={handleInputChange}
-                                        className="w-full border-2 border-gray-200 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:border-primary focus:outline-none transition-all duration-200"
+                                        className={`w-full border-2 h-[40px] px-4 rounded-lg bg-gray-50 focus:bg-white focus:outline-none transition-all duration-200 ${errors.senha ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-primary"
+                                            }`}
                                         placeholder="Digite sua senha (mínimo 6 caracteres)"
                                     />
                                     {errors.senha && (
-                                        <span className="text-red-600 text-sm">{errors.senha}</span>
+                                        <span className="text-red-600 text-sm">{errors.senha.message}</span>
                                     )}
                                 </div>
                             </div>
