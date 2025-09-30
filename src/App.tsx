@@ -22,6 +22,7 @@ import Register from "./pages/register";
 import Dashboard from "./pages/dashboard";
 import UserProducts from "./pages/user-products";
 import FormProducts from "./pages/form-product";
+import Contact from "./pages/contact";
 
 /**
  * Componente principal da aplicação
@@ -93,7 +94,7 @@ export default function App() {
         </AuthTemplate>
       ),
     },
-     {
+    {
       // Rota do dashboard
       path: "/dashboard",
       element: (
@@ -102,7 +103,7 @@ export default function App() {
         </AdminTemplate>
       ),
     },
-      {
+    {
       // Rota exibição de produtos
       path: "/my-products",
       element: (
@@ -111,13 +112,22 @@ export default function App() {
         </AdminTemplate>
       ),
     },
-        {
+    {
       // Rota cadastro de produtos
       path: "/form-products",
       element: (
         <AdminTemplate>
           <FormProducts />
         </AdminTemplate>
+      ),
+    },
+    {
+      // Rota contato
+      path: "/contact",
+      element: (
+        <UserTemplate>
+          <Contact />
+        </UserTemplate>
       ),
     },
     {
